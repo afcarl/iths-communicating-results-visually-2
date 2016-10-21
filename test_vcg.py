@@ -27,10 +27,13 @@ def test_describe_figure(fig):
 def test_describe_and_show_figure(fig):
     descr = vcg.describe_and_show_figure(fig)
 
-@pytest.skip
+@pytest.mark.skip(reason="no way of currently testing this")
 def test_play():
     # not really appropriate for unit tests---
     # how do you do functional testing for
     # ipywidgets?
 
     vcg.play()
+
+def test_record_action():
+    vcg.record_action('test', 'test')

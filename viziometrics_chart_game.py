@@ -1,6 +1,7 @@
 """Methods for creating interactive elements of viziometrics_game"""
 
 import random
+import time
 import requests
 
 import IPython.display
@@ -13,6 +14,24 @@ import mixpanel
 # module-level global variables - uncool, but simple
 keywords = 'population health'
 username = random.getrandbits(32)
+time_of_last_action = time.time()
+
+controls = None
+current_figure = {}
+
+PROJECT_TOKEN = 'c0428e0fd3f766df0613fa4c1ecb9257'
+mp = mixpanel.Mixpanel(PROJECT_TOKEN)
+
+def record_action(action, value):
+    """send details of an action to mixpanel for future use"""
+    global time_of_last_action
+
+    props = {'value':value,
+             'keywords': keywords,
+             'time_to_action':time.time() - time_of_last_action}
+    props.update(current_figure)
+    mp.track(username, action, props)
+    time_of_last_action = time.time()
 
 def set_keywords(kwstr):
     """Set keywords for random figure selection"""
@@ -58,7 +77,7 @@ def describe_and_show_figure(r):
     return describe_figure(r) + '<br/><img src="{}"/>'.format(img_url)
 
 def play():
-    global keywords
+    global keywords, controls, current_figure
     
     # create button HBox widgets
     expect_buttons = []
@@ -70,13 +89,12 @@ def play():
     # only include "Don't Know" button on expect activity, not on confirm
     expect_buttons.append(widgets.Button(description='Don\'t Know'))
 
-    # glocal vars to capture state of game
-    controls = None
-    current_figure = None
-    
     # connect expect buttons to "reveal" action
     def reveal_figure(b):
-        global controls, current_figure
+        global controls
+
+        record_action('predict', b.description)
+
         controls.close()
 
         descr = describe_and_show_figure(current_figure)
@@ -90,8 +108,13 @@ def play():
 
     # connect confirm buttons to "new_question" action
     def new_question(b):
-        global controls, current_figure, keywords
-        controls.close()
+        global controls, current_figure
+
+        if current_figure:
+            record_action('confirm', b.description)
+
+        if controls:
+            controls.close()
         
         current_figure = select_random_figure(keywords)
         descr = describe_figure(current_figure)
