@@ -10,29 +10,10 @@ from ipywidgets import widgets
 
 import mixpanel
 
-
-# module-level global variables - uncool, but simple
+####################################################
+# module-level global variables and related methods:
+#    uncool, but simple
 keywords = 'population health'
-username = random.getrandbits(32)
-time_of_last_action = time.time()
-
-controls = None
-current_figure = {}
-
-PROJECT_TOKEN = 'c0428e0fd3f766df0613fa4c1ecb9257'
-mp = mixpanel.Mixpanel(PROJECT_TOKEN)
-
-def record_action(action, value):
-    """send details of an action to mixpanel for future use"""
-    global time_of_last_action
-
-    props = {'value':value,
-             'keywords': keywords,
-             'time_to_action':time.time() - time_of_last_action}
-    props.update(current_figure)
-    mp.track(username, action, props)
-    time_of_last_action = time.time()
-
 def set_keywords(kwstr):
     """Set keywords for random figure selection"""
     global keywords
@@ -40,13 +21,42 @@ def set_keywords(kwstr):
     assert kwstr != '', 'Keyword string may not be blank'
     keywords = kwstr
 
+
+username = random.getrandbits(32)
 def set_user(username_str):
     """Set username for leader board (once I make one)"""
     global username
     
     assert username != '', 'Username may not be blank'
     username = username_str
+
     
+controls = None
+current_figure = {}
+
+
+time_of_last_action = time.time()
+def reset_timer():
+    """a bit of a hack to measure time between events"""
+    global time_of_last_action
+
+    time_of_last_action = time.time()
+
+
+PROJECT_TOKEN = 'c0428e0fd3f766df0613fa4c1ecb9257'
+mp = mixpanel.Mixpanel(PROJECT_TOKEN)
+def record_action(action, value):
+    """send details of an action to mixpanel for future use"""
+    props = {'value':value,
+             'keywords': keywords,
+             'time_to_action':time.time() - time_of_last_action}
+    props.update(current_figure)
+    mp.track(username, action, props)
+    reset_timer()
+
+
+#####################################
+# more respectable methods start here
 def select_random_figure(keywords='population health'):
     """Returns a single random figure"""
     raw_results = requests.get('http://viziometrics.org/api/pmc/image/search/',
@@ -62,6 +72,7 @@ def select_random_figure(keywords='population health'):
                 return candidate_figure
     raise Exception('no visualizations found for keywords "{}"'.format(keywords))
 
+
 def describe_figure(r):
     """ Generate HTML to describe figure to player"""
     descr = ''
@@ -70,11 +81,13 @@ def describe_figure(r):
     descr += '<br/><b>Figure:</b> {}'.format(r['caption'])
     return descr
 
+
 def describe_and_show_figure(r):
     """ Generate HTML to describe and show figure to player"""
     s3_key = r['img_loc']
     img_url = 'http://s3-us-west-2.amazonaws.com/escience.washington.edu.viziometrics/{}'.format(s3_key)
     return describe_figure(r) + '<br/><img src="{}"/>'.format(img_url)
+
 
 def play():
     global keywords, controls, current_figure
@@ -94,7 +107,6 @@ def play():
         global controls
 
         record_action('predict', b.description)
-
         controls.close()
 
         descr = describe_and_show_figure(current_figure)
@@ -107,13 +119,11 @@ def play():
         b.on_click(reveal_figure)
 
     # connect confirm buttons to "new_question" action
-    def new_question(b):
+    def new_question(b=None):
         global controls, current_figure
 
-        if current_figure:
+        if b != None:
             record_action('confirm', b.description)
-
-        if controls:
             controls.close()
         
         current_figure = select_random_figure(keywords)
@@ -127,4 +137,5 @@ def play():
         b.on_click(new_question)
 
     # start game with a new_question
-    new_question(None)
+    reset_timer()
+    new_question()
