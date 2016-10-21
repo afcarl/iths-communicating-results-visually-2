@@ -1,17 +1,32 @@
 """Methods for creating interactive elements of viziometrics_game"""
 
-import IPython.display
+import random
 import requests
+
+import IPython.display
 from IPython.display import display
 from ipywidgets import widgets
 
+import mixpanel
+
+
+# module-level global variables - uncool, but simple
 keywords = 'population health'
+username = random.getrandbits(32)
+
 def set_keywords(kwstr):
     """Set keywords for random figure selection"""
     global keywords
     
     assert kwstr != '', 'Keyword string may not be blank'
     keywords = kwstr
+
+def set_user(username_str):
+    """Set username for leader board (once I make one)"""
+    global username
+    
+    assert username != '', 'Username may not be blank'
+    username = username_str
     
 def select_random_figure(keywords='population health'):
     """Returns a single random figure"""
