@@ -95,7 +95,7 @@ def play():
     # create button HBox widgets
     expect_buttons = []
     confirm_buttons = []
-    for chart_type in ['Scatter', 'Line', 'Bar', 'Horizontal Bar', 'Pie', 'Other']:
+    for chart_type in ['Scatter', 'Line', 'Bar', 'Pie', 'Other']:
         expect_buttons.append(widgets.Button(description=chart_type))
         confirm_buttons.append(widgets.Button(description=chart_type))
 
